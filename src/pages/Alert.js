@@ -13,14 +13,15 @@ const Headingalert = styled.div`
   background-color: yellow;
 `;
 const Alert = () => {
+  const NAVIGATE_TO_HOME_TIME = 9000;
   const navigate = useNavigate();
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       navigate("/");
-    }, 9000); // Navigate to "/" after 5 seconds
+    }, NAVIGATE_TO_HOME_TIME);
 
-    return () => clearTimeout(timeout); // Clear timeout if component unmounts
+    return () => clearTimeout(timeout);
   }, [navigate]);
 
   return (
