@@ -1,27 +1,45 @@
-// src/pages/Play.js
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
+import { useDispatch } from "react-redux";
 import { Snackbar } from "@mui/material";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouse } from "@fortawesome/free-solid-svg-icons";
-import {
-  setTime,
-  setData,
-  setNames,
-  setScore,
-  setSelectedPokemon,
-  setIsLoading,
-  setSnackbarOpen,
-  setSnackbarMessage,
-  setGameover,
-} from "../reducer";
-
+import { useGetPokemonByNameQuery } from "../actions";
+import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
 const Container = styled.div`
   display: flex;
   align-items: center;
+`;
+
+const Heading = styled.h1`
+  text-align: center;
+  margin-bottom: 20px;
+`;
+
+const Score = styled.h1`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const Time = styled.h1`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const NameParagraph = styled.p`
+  margin: 5px 0;
+  width: 400px;
+  border: 1px solid;
+  border-radius: 11px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 `;
 
 const Header = styled.div`
@@ -64,13 +82,12 @@ const ContentContainer = styled.div`
 
 const Paragraph = styled.p`
   margin: 5px 0;
-  border: 1px solid;
   width: 400px;
-  border-radius: 11px;
   height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 `;
 
 const ImageContainer = styled.div`
@@ -81,92 +98,82 @@ const ImageContainer = styled.div`
   height: 600px;
 `;
 
-const Playcontainer = styled.div`
+const PlayContainer = styled.div`
   background-color: aliceblue;
 `;
 
+const Image = styled.img`
+  width: 325px;
+  height: 325px;
+`;
+const Subcontainer = styled.div`
+  margin-left: 90px;
+`;
 const Play = () => {
+  const { data, error, isLoading } = useGetPokemonByNameQuery();
+  const [currentTime, setCurrentTime] = useState(10);
+  const [score, setScore] = useState(0);
+
+  const [selectedPokemon, setSelectedPokemon] = useState({ name: "", url: "" });
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [names, setNames] = useState([]);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [gameover, setGameover] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const {
-    time,
-    data,
-    names,
-    score,
-    selectedPokemon,
-    isLoading,
-    snackbarOpen,
-    snackbarMessage,
-    gameover,
-  } = useSelector((state) => state.game);
-  const currentTime = useSelector((state) => state.game.time);
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get("https://pokeapi.co/api/v2/pokemon");
-        dispatch(setData(response.data.results));
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-    fetchData();
-  }, [dispatch]);
 
-  useEffect(() => {
-    const getRandomNames = () => {
+  const getRandomNames = () => {
+    if (data && data.length > 0) {
       const shuffled = [...data].sort(() => 0.5 - Math.random());
       let selected = shuffled.slice(0, 4).map((pokemon) => pokemon.name);
-
       const selected3 = selected[Math.floor(Math.random() * selected.length)];
-      const selectedPokemonName = async () => {
-        const selectedPokemon = data.find(
-          (pokemon) => pokemon.name === selected3
-        );
-        try {
-          const response = await axios.get(selectedPokemon.url);
-          const imageUrl = response.data.sprites.front_default;
-          dispatch(setSelectedPokemon({ name: selected3, url: imageUrl }));
-        } catch (error) {
-          console.log("error");
-        }
+      const selectedPokemon = data.find(
+        (pokemon) => pokemon.name === selected3
+      );
+      if (selectedPokemon) {
+        setSelectedPokemon({
+          name: selectedPokemon.name,
+          url: selectedPokemon.url,
+        });
+      }
+      setNames(selected);
+    }
+  };
 
-        dispatch(setNames(selected));
-      };
-      selectedPokemonName();
-    };
-
-    if (data.length > 0) {
+  useEffect(() => {
+    if (data && data.length > 0) {
       getRandomNames();
     }
-    dispatch(setIsLoading(false));
-  }, [data, isLoading, dispatch]);
+  }, [data]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (currentTime > 0) {
-        console.log(currentTime, "hello");
-        dispatch(setTime(currentTime - 1));
+        setCurrentTime(currentTime - 1);
       } else {
-        dispatch(setSnackbarMessage("Game Over"));
-        dispatch(setSnackbarOpen(true));
-        dispatch(setGameover(true));
+        setSnackbarMessage("Game Over");
+        setSnackbarOpen(true);
+        setGameover(true);
         clearInterval(interval);
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [dispatch, currentTime]);
+  }, [currentTime]);
 
   const handleCheckName = (name) => {
     if (name === selectedPokemon.name) {
-      dispatch(setScore(score + 20));
-      dispatch(setSnackbarMessage("Congratulations"));
+      setScore(score + 20);
+      setSnackbarMessage("Congratulations");
     } else {
-      dispatch(setSnackbarMessage("Try again"));
+      setSnackbarMessage("Try again");
     }
 
-    dispatch(setSnackbarOpen(true));
-    dispatch(setIsLoading(true));
+    setSnackbarOpen(true);
+
+    // Reset game logic and fetch new random names
+    setGameover(true);
+    getRandomNames(); // Call getRandomNames again to fetch new names
   };
 
   const handleHomeClick = () => {
@@ -174,44 +181,51 @@ const Play = () => {
   };
 
   const handleSnackbarClose = () => {
-    dispatch(setSnackbarOpen(false));
+    setSnackbarOpen(false);
     if (gameover) {
       navigate("/alert");
     }
   };
 
+  if (isLoading) {
+    return <CircularProgress />;
+  }
+
+  if (error) {
+    return <Alert severity="error">This is an error Alert.</Alert>;
+  }
   return (
     <Container>
-      <Playcontainer>
+      <PlayContainer>
         <ImageContainer>
           <Header>
-            <h1>Hi Pokemon</h1>
-            {selectedPokemon.name}
-            <img alt="pokemon" src={selectedPokemon.url} />
+            <Heading>Hi Pokemon</Heading>
+            <Paragraph>{selectedPokemon.name}</Paragraph>
+            <Image alt="pokemon" src={selectedPokemon.url} />
           </Header>
         </ImageContainer>
-      </Playcontainer>
-      <div>
+      </PlayContainer>
+      <Subcontainer>
         <InfoContainer>
           <InfoItem>
-            <h1>Score {score}</h1>
+            <Score>Score {score}</Score>
           </InfoItem>
           <InfoItem>
-            <h1>Time {time}</h1>
+            <Time>Time {currentTime}</Time>
           </InfoItem>
           <InfoItem>
             <FontAwesomeIcon
               icon={faHouse}
               onClick={handleHomeClick}
               size="2x"
-            />{" "}
+            />
           </InfoItem>
         </InfoContainer>
         <ContentContainer>
           {names.map((name, index) => (
-            <Paragraph key={index} onClick={() => handleCheckName(name)}>
+            <NameParagraph key={index} onClick={() => handleCheckName(name)}>
               {name}
-            </Paragraph>
+            </NameParagraph>
           ))}
           <Snackbar
             open={snackbarOpen}
@@ -221,7 +235,7 @@ const Play = () => {
             anchorOrigin={{ vertical: "center", horizontal: "center" }}
           />
         </ContentContainer>
-      </div>
+      </Subcontainer>
     </Container>
   );
 };

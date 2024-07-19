@@ -1,24 +1,33 @@
-import React from "react";
-import { useSelector } from "react-redux";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-
-const AlertContainer = styled.div`
-  background-color: red;
-  padding: 20px;
+const Alertcontainer = styled.div`
   display: flex;
-  justify-content: center;
-  color: white;
   align-items: center;
+  justify-content: center;
+  margin-top: 300px;
 `;
-
+const Headingalert = styled.div`
+  display: flex;
+  font-size: 50px;
+  background-color: yellow;
+`;
 const Alert = () => {
-  const Scores = useSelector((state) => state.game.score);
+  const NAVIGATE_TO_HOME_TIME = 9000;
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      navigate("/");
+    }, NAVIGATE_TO_HOME_TIME);
+
+    return () => clearTimeout(timeout);
+  }, [navigate]);
 
   return (
-    <AlertContainer>
-      <h1 style={{ fontSize: "50px" }}>GAME OVER</h1>
-      <h1>Score :{Scores}</h1>
-    </AlertContainer>
+    <Alertcontainer>
+      <Headingalert>Sorry, the game is over.</Headingalert>
+    </Alertcontainer>
   );
 };
 

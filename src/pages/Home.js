@@ -63,6 +63,7 @@ const Image = styled.img`
 
 const Homemain = styled.div`
   background-color: #4f4e4b;
+  height: 644px;
 `;
 
 const Buttonplay = styled.button`
@@ -70,9 +71,10 @@ const Buttonplay = styled.button`
   background-color: yellow;
   border-radius: 16px;
   width: 160px;
-  height: 30px;
+  height: 39px;
   color: #201e1e;
   font-weight: 900;
+  margin-top: 83px;
 `;
 
 const Home = () => {
